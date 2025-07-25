@@ -39,7 +39,8 @@ The application follows a monorepo structure with clear separation between clien
 
 ### Backend Architecture
 - **API Layer**: RESTful endpoints for graph session management
-- **Storage Layer**: Abstracted storage interface with in-memory implementation
+- **Storage Layer**: PostgreSQL database with Drizzle ORM for persistence
+- **Database Schema**: Users and graph sessions with proper relations
 - **Development Setup**: Vite integration for seamless full-stack development
 
 ### Database Schema
@@ -64,8 +65,9 @@ The application follows a monorepo structure with clear separation between clien
 
 ### Data Persistence
 1. Graph sessions can be saved to the backend via REST API
-2. In-memory storage for development (configured for PostgreSQL)
+2. PostgreSQL database with proper schema and relations
 3. JSON serialization of graph data for storage
+4. User management system for future authentication
 
 ## External Dependencies
 
@@ -102,6 +104,13 @@ The application follows a monorepo structure with clear separation between clien
 - **Repl.it Integration**: Special handling for Repl.it environment
 
 ## Recent Changes
+
+### January 2025 - Database Integration
+- Migrated from in-memory storage to PostgreSQL database
+- Added user management system with proper schema relations
+- Created database layer with Drizzle ORM for type-safe operations
+- Implemented DatabaseStorage class replacing MemStorage
+- Setup database tables for users and graph sessions
 
 ### December 2024 - Traversal Order Display Feature
 - Added post-algorithm completion display showing traversal order with arrows
