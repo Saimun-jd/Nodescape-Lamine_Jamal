@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/sidebar';
 import { AlgorithmControls } from '@/components/algorithm-controls';
 import { HelpModal } from '@/components/help-modal';
 import { TraversalOrderDisplay } from '@/components/traversal-order-display';
+import { GraphClassifier } from '@/components/graph-classifier';
 import { AlgorithmType } from '@/lib/graph-types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -193,6 +194,11 @@ export default function GraphVisualizer() {
         isVisible={!algorithmState.isRunning && algorithmState.traversalOrder.length > 0 && showTraversalOrder}
         onDismiss={() => setShowTraversalOrder(false)}
       />
+
+      {/* ML Graph Classifier Panel */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <GraphClassifier graphData={graphState} />
+      </div>
 
       <HelpModal />
     </div>
