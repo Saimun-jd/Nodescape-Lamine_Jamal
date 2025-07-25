@@ -12,6 +12,7 @@ const initialAlgorithmState: AlgorithmState = {
   currentlyVisiting: null,
   algorithm: null,
   startNode: null,
+  traversalOrder: [],
 };
 
 export function useAlgorithm() {
@@ -64,12 +65,14 @@ export function useAlgorithm() {
       const nextStep = prev.currentStep + 1;
       const step = prev.steps[nextStep];
       const newVisitedNodes = new Set(prev.visitedNodes);
+      const newTraversalOrder = [...prev.traversalOrder];
       let currentlyVisiting = prev.currentlyVisiting;
 
       if (step.action === 'visit') {
         currentlyVisiting = step.nodeId;
       } else if (step.action === 'complete') {
         newVisitedNodes.add(step.nodeId);
+        newTraversalOrder.push(step.nodeId);
         currentlyVisiting = null;
       }
 
@@ -78,6 +81,7 @@ export function useAlgorithm() {
         currentStep: nextStep,
         visitedNodes: newVisitedNodes,
         currentlyVisiting,
+        traversalOrder: newTraversalOrder,
         isRunning: nextStep < prev.totalSteps - 1,
       };
     });
@@ -101,12 +105,14 @@ export function useAlgorithm() {
           const nextStep = prev.currentStep + 1;
           const step = prev.steps[nextStep];
           const newVisitedNodes = new Set(prev.visitedNodes);
+          const newTraversalOrder = [...prev.traversalOrder];
           let currentlyVisiting = prev.currentlyVisiting;
 
           if (step.action === 'visit') {
             currentlyVisiting = step.nodeId;
           } else if (step.action === 'complete') {
             newVisitedNodes.add(step.nodeId);
+            newTraversalOrder.push(step.nodeId);
             currentlyVisiting = null;
           }
 
@@ -115,6 +121,7 @@ export function useAlgorithm() {
             currentStep: nextStep,
             visitedNodes: newVisitedNodes,
             currentlyVisiting,
+            traversalOrder: newTraversalOrder,
             isRunning: nextStep < prev.totalSteps - 1,
           };
         });

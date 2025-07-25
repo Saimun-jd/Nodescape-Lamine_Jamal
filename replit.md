@@ -35,7 +35,7 @@ The application follows a monorepo structure with clear separation between clien
   - React Query for server state management
   - Local state for UI interactions
 - **Graph Visualization**: Custom SVG-based canvas component for interactive graph rendering
-- **Algorithm Visualization**: Step-by-step animation system with progress tracking
+- **Algorithm Visualization**: Step-by-step animation system with progress tracking and post-completion traversal order display
 
 ### Backend Architecture
 - **API Layer**: RESTful endpoints for graph session management
@@ -60,6 +60,7 @@ The application follows a monorepo structure with clear separation between clien
 2. Algorithm pre-computes all steps for smooth animation
 3. Visualization engine steps through algorithm states
 4. Progress tracking and queue/stack visualization in real-time
+5. After completion, displays traversal order with arrows showing the path
 
 ### Data Persistence
 1. Graph sessions can be saved to the backend via REST API
@@ -99,5 +100,14 @@ The application follows a monorepo structure with clear separation between clien
 - **Hot Module Replacement**: Instant updates during development
 - **Error Overlay**: Runtime error modal in development
 - **Repl.it Integration**: Special handling for Repl.it environment
+
+## Recent Changes
+
+### December 2024 - Traversal Order Display Feature
+- Added post-algorithm completion display showing traversal order with arrows
+- Enhanced algorithm state tracking to include traversal order sequence
+- Created TraversalOrderDisplay component with dismiss functionality
+- Color-coded display distinguishes between BFS (green) and DFS (orange) results
+- Integrated seamlessly with existing visualization controls
 
 The application is designed as an educational tool that makes graph algorithms visual and interactive, with a clean separation of concerns that allows for easy extension and maintenance.

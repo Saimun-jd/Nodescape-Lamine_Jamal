@@ -5,6 +5,7 @@ import { GraphCanvas } from '@/components/graph-canvas';
 import { Sidebar } from '@/components/sidebar';
 import { AlgorithmControls } from '@/components/algorithm-controls';
 import { HelpModal } from '@/components/help-modal';
+import { TraversalOrderDisplay } from '@/components/traversal-order-display';
 import { AlgorithmType } from '@/lib/graph-types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,6 +38,7 @@ export default function GraphVisualizer() {
   // Algorithm selection state
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<AlgorithmType | null>(null);
   const [selectedStartNode, setSelectedStartNode] = useState<string | null>(null);
+  const [showTraversalOrder, setShowTraversalOrder] = useState(true);
 
   // Handle right-click for cancellation
   useEffect(() => {
@@ -112,6 +114,7 @@ export default function GraphVisualizer() {
 
     startVisualization(selectedAlgorithm, selectedStartNode, graphState.nodes, graphState.edges);
     setMode('algorithm');
+    setShowTraversalOrder(true);
     
     toast({
       title: "Visualization started",
@@ -123,6 +126,7 @@ export default function GraphVisualizer() {
     clearGraph();
     resetAlgorithm();
     setSelectedStartNode(null);
+    setShowTraversalOrder(false);
     
     toast({
       title: "Graph cleared",
@@ -181,6 +185,13 @@ export default function GraphVisualizer() {
       <AlgorithmControls
         algorithmState={algorithmState}
         currentQueueOrStack={getCurrentQueueOrStack()}
+      />
+
+      <TraversalOrderDisplay
+        traversalOrder={algorithmState.traversalOrder}
+        algorithm={algorithmState.algorithm}
+        isVisible={!algorithmState.isRunning && algorithmState.traversalOrder.length > 0 && showTraversalOrder}
+        onDismiss={() => setShowTraversalOrder(false)}
       />
 
       <HelpModal />

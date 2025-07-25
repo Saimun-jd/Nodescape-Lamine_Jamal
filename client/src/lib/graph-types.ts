@@ -37,6 +37,7 @@ export interface AlgorithmState {
   currentlyVisiting: string | null;
   algorithm: AlgorithmType | null;
   startNode: string | null;
+  traversalOrder: string[];
 }
 
 export interface CanvasState {
