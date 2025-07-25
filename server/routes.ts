@@ -4,6 +4,15 @@ import { storage } from "./storage";
 import { insertGraphSessionSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Docker
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || "1.0.0"
+    });
+  });
+
   // Graph sessions API routes
   app.get("/api/graph-sessions", async (req, res) => {
     try {
