@@ -46,7 +46,7 @@ export interface GraphStructure {
 }
 
 export class GraphAnalyzer {
-  private buildGraphStructure(graph: GraphData): GraphStructure {
+  private buildDirectedGraphStructure(graph: GraphData): GraphStructure {
     const adjList = new Map<string, Set<string>>();
     const inDegree = new Map<string, number>();
     const outDegree = new Map<string, number>();
@@ -58,12 +58,41 @@ export class GraphAnalyzer {
       outDegree.set(node.id, 0);
     }
 
-    // Add edges
+    // Add edges (directed)
     for (const edge of graph.edges) {
       adjList.get(edge.from)?.add(edge.to);
-      adjList.get(edge.to)?.add(edge.from); // Treat as undirected for most calculations
-      
       outDegree.set(edge.from, (outDegree.get(edge.from) || 0) + 1);
+      inDegree.set(edge.to, (inDegree.get(edge.to) || 0) + 1);
+    }
+
+    return {
+      adjList,
+      inDegree,
+      outDegree,
+      nodeCount: graph.nodes.length,
+      edgeCount: graph.edges.length
+    };
+  }
+
+  private buildUndirectedGraphStructure(graph: GraphData): GraphStructure {
+    const adjList = new Map<string, Set<string>>();
+    const inDegree = new Map<string, number>();
+    const outDegree = new Map<string, number>();
+
+    // Initialize nodes
+    for (const node of graph.nodes) {
+      adjList.set(node.id, new Set<string>());
+      inDegree.set(node.id, 0);
+      outDegree.set(node.id, 0);
+    }
+
+    // Add edges (undirected)
+    for (const edge of graph.edges) {
+      adjList.get(edge.from)?.add(edge.to);
+      adjList.get(edge.to)?.add(edge.from);
+      outDegree.set(edge.from, (outDegree.get(edge.from) || 0) + 1);
+      outDegree.set(edge.to, (outDegree.get(edge.to) || 0) + 1);
+      inDegree.set(edge.from, (inDegree.get(edge.from) || 0) + 1);
       inDegree.set(edge.to, (inDegree.get(edge.to) || 0) + 1);
     }
 
@@ -251,29 +280,33 @@ export class GraphAnalyzer {
       };
     }
 
-    const structure = this.buildGraphStructure(graph);
-    const degrees = Array.from(structure.outDegree.values());
+    // Use directed graph for cycle detection
+    const directedStructure = this.buildDirectedGraphStructure(graph);
+    const cycleCount = this.detectCycles(directedStructure);
+
+    // Use undirected graph for other metrics
+    const undirectedStructure = this.buildUndirectedGraphStructure(graph);
+    const degrees = Array.from(undirectedStructure.outDegree.values());
     
     const avgDegree = degrees.reduce((a, b) => a + b, 0) / degrees.length;
     const maxDegree = Math.max(...degrees);
     const minDegree = Math.min(...degrees);
     const degreeVariance = degrees.reduce((acc, deg) => acc + Math.pow(deg - avgDegree, 2), 0) / degrees.length;
     
-    const density = structure.nodeCount > 1 
-      ? (2 * structure.edgeCount) / (structure.nodeCount * (structure.nodeCount - 1))
+    const density = undirectedStructure.nodeCount > 1 
+      ? (2 * undirectedStructure.edgeCount) / (undirectedStructure.nodeCount * (undirectedStructure.nodeCount - 1))
       : 0;
 
     const hasLoops = graph.edges.some((edge: Edge) => edge.from === edge.to) ? 1 : 0;
-    const cycleCount = this.detectCycles(structure);
-    const longestPath = this.findLongestPath(structure);
-    const components = this.countComponents(structure);
-    const avgClusteringCoeff = this.calculateClusteringCoefficient(structure);
-    const { diameter, radius } = this.calculateDistanceMetrics(structure);
+    const longestPath = this.findLongestPath(undirectedStructure);
+    const components = this.countComponents(undirectedStructure);
+    const avgClusteringCoeff = this.calculateClusteringCoefficient(undirectedStructure);
+    const { diameter, radius } = this.calculateDistanceMetrics(undirectedStructure);
     const isConnected = components === 1 ? 1 : 0;
 
     return {
-      nodeCount: structure.nodeCount,
-      edgeCount: structure.edgeCount,
+      nodeCount: undirectedStructure.nodeCount,
+      edgeCount: undirectedStructure.edgeCount,
       density,
       avgDegree,
       maxDegree,

@@ -12,6 +12,8 @@ export function useGraph() {
   const [mode, setMode] = useState<AppMode>('addNode');
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [previewEdge, setPreviewEdge] = useState<{ from: string; to: { x: number; y: number } } | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
   const addNode = useCallback((x: number, y: number) => {
     setGraphState(prev => {
@@ -85,8 +87,16 @@ export function useGraph() {
         setSelectedNode(null);
         setPreviewEdge(null);
       }
+    } else if (mode === 'delete') {
+      removeNode(nodeId);
     }
-  }, [mode, selectedNode, addEdge]);
+  }, [mode, selectedNode, addEdge, removeNode]);
+
+  const handleEdgeClick = useCallback((edgeId: string) => {
+    if (mode === 'delete') {
+      removeEdge(edgeId);
+    }
+  }, [mode, removeEdge]);
 
   const handleCanvasClick = useCallback((x: number, y: number) => {
     if (mode === 'addNode') {
@@ -104,6 +114,22 @@ export function useGraph() {
     }
   }, [mode, selectedNode]);
 
+  const handleNodeMouseEnter = useCallback((nodeId: string) => {
+    setHoveredNode(nodeId);
+  }, []);
+
+  const handleNodeMouseLeave = useCallback(() => {
+    setHoveredNode(null);
+  }, []);
+
+  const handleEdgeMouseEnter = useCallback((edgeId: string) => {
+    setHoveredEdge(edgeId);
+  }, []);
+
+  const handleEdgeMouseLeave = useCallback(() => {
+    setHoveredEdge(null);
+  }, []);
+
   const cancelEdgeCreation = useCallback(() => {
     setSelectedNode(null);
     setPreviewEdge(null);
@@ -114,6 +140,8 @@ export function useGraph() {
     mode,
     selectedNode,
     previewEdge,
+    hoveredNode,
+    hoveredEdge,
     setMode,
     addNode,
     addEdge,
@@ -121,8 +149,13 @@ export function useGraph() {
     removeEdge,
     clearGraph,
     handleNodeClick,
+    handleEdgeClick,
     handleCanvasClick,
     handleMouseMove,
+    handleNodeMouseEnter,
+    handleNodeMouseLeave,
+    handleEdgeMouseEnter,
+    handleEdgeMouseLeave,
     cancelEdgeCreation,
   };
 }

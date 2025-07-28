@@ -6,9 +6,16 @@ interface GraphCanvasProps {
   edges: GraphEdge[];
   onCanvasClick: (x: number, y: number) => void;
   onNodeClick: (nodeId: string) => void;
+  onEdgeClick: (edgeId: string) => void;
   onMouseMove: (x: number, y: number) => void;
+  onNodeMouseEnter: (nodeId: string) => void;
+  onNodeMouseLeave: () => void;
+  onEdgeMouseEnter: (edgeId: string) => void;
+  onEdgeMouseLeave: () => void;
   selectedNode: string | null;
   previewEdge: { from: string; to: { x: number; y: number } } | null;
+  hoveredNode: string | null;
+  hoveredEdge: string | null;
   visitedNodes: Set<string>;
   currentlyVisiting: string | null;
   mode: string;
@@ -20,9 +27,16 @@ export function GraphCanvas({
   edges,
   onCanvasClick,
   onNodeClick,
+  onEdgeClick,
   onMouseMove,
+  onNodeMouseEnter,
+  onNodeMouseLeave,
+  onEdgeMouseEnter,
+  onEdgeMouseLeave,
   selectedNode,
   previewEdge,
+  hoveredNode,
+  hoveredEdge,
   visitedNodes,
   currentlyVisiting,
   mode,
@@ -64,31 +78,88 @@ export function GraphCanvas({
   const getNodeClasses = useCallback((nodeId: string) => {
     let classes = "node absolute w-12 h-12 rounded-full flex items-center justify-center font-semibold text-sm shadow-lg transition-all duration-200 cursor-pointer";
     
+    if (mode === 'delete') {
+      classes += " hover:bg-red-600 hover:scale-110";
+    }
+    
     if (visitedNodes.has(nodeId)) {
       classes += " bg-green-500 text-white";
     } else if (currentlyVisiting === nodeId) {
       classes += " bg-orange-500 text-white animate-pulse";
     } else if (selectedNode === nodeId) {
       classes += " bg-purple-600 text-white ring-4 ring-purple-300";
+    } else if (hoveredNode === nodeId) {
+      classes += mode === 'delete' ? " bg-red-500 text-white" : " bg-blue-700 text-white";
     } else {
       classes += " bg-blue-600 text-white hover:bg-blue-700";
     }
     
     return classes;
-  }, [visitedNodes, currentlyVisiting, selectedNode]);
+  }, [visitedNodes, currentlyVisiting, selectedNode, hoveredNode, mode]);
 
   const getEdgeClasses = useCallback((edge: GraphEdge) => {
     const fromVisited = visitedNodes.has(edge.from);
     const toVisited = visitedNodes.has(edge.to);
     
-    if (fromVisited && toVisited) {
-      return "stroke-green-500 stroke-2";
-    } else if (fromVisited || toVisited) {
-      return "stroke-orange-500 stroke-2";
+    let classes = "stroke-2 fill-none transition-all duration-200";
+    
+    if (mode === 'delete') {
+      classes += " cursor-pointer hover:stroke-red-500 hover:stroke-3";
     }
     
-    return "stroke-slate-400 stroke-2";
-  }, [visitedNodes]);
+    if (hoveredEdge === edge.id) {
+      classes += mode === 'delete' ? " stroke-red-500 stroke-3" : " stroke-blue-500 stroke-3";
+    } else if (fromVisited && toVisited) {
+      classes += " stroke-green-500";
+    } else if (fromVisited || toVisited) {
+      classes += " stroke-orange-500";
+    } else {
+      classes += " stroke-slate-400";
+    }
+    
+    return classes;
+  }, [visitedNodes, hoveredEdge, mode]);
+
+  // Calculate arrow position and angle
+  const calculateArrowPath = useCallback((fromPos: { x: number; y: number }, toPos: { x: number; y: number }) => {
+    const nodeRadius = 24; // Half of node width (48px / 2)
+    const arrowLength = 12;
+    const arrowWidth = 8;
+    
+    // Calculate direction vector
+    const dx = toPos.x - fromPos.x;
+    const dy = toPos.y - fromPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance === 0) return null;
+    
+    // Normalize direction vector
+    const unitX = dx / distance;
+    const unitY = dy / distance;
+    
+    // Calculate start point (edge of source node)
+    const startX = fromPos.x + unitX * nodeRadius;
+    const startY = fromPos.y + unitY * nodeRadius;
+    
+    // Calculate end point (edge of target node)
+    const endX = toPos.x - unitX * nodeRadius;
+    const endY = toPos.y - unitY * nodeRadius;
+    
+    // Calculate arrow head points
+    const arrowAngle = Math.atan2(dy, dx);
+    const arrowAngle1 = arrowAngle - Math.PI / 6; // 30 degrees
+    const arrowAngle2 = arrowAngle + Math.PI / 6; // 30 degrees
+    
+    const arrowX1 = endX - arrowLength * Math.cos(arrowAngle1);
+    const arrowY1 = endY - arrowLength * Math.sin(arrowAngle1);
+    const arrowX2 = endX - arrowLength * Math.cos(arrowAngle2);
+    const arrowY2 = endY - arrowLength * Math.sin(arrowAngle2);
+    
+    return {
+      linePath: `M ${startX} ${startY} L ${endX} ${endY}`,
+      arrowPath: `M ${endX} ${endY} L ${arrowX1} ${arrowY1} M ${endX} ${endY} L ${arrowX2} ${arrowY2}`
+    };
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col relative">
@@ -101,6 +172,7 @@ export function GraphCanvas({
             <span>
               {mode === 'addNode' && 'Click on the canvas to add nodes'}
               {mode === 'addEdge' && 'Click a node, then click another to connect them'}
+              {mode === 'delete' && 'Click nodes or edges to delete them'}
               {mode === 'algorithm' && 'Algorithm visualization in progress'}
             </span>
           </div>
@@ -123,33 +195,65 @@ export function GraphCanvas({
         <svg 
           ref={svgRef}
           className="absolute inset-0 w-full h-full pointer-events-none"
-          style={{ zIndex: 1 }}
+          style={{ zIndex: 100 }}
         >
-          {/* Render edges */}
+          {/* Define arrow marker */}
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="7"
+              refX="9"
+              refY="3.5"
+              orient="auto"
+            >
+              <polygon
+                points="0 0, 10 3.5, 0 7"
+                fill="currentColor"
+              />
+            </marker>
+          </defs>
+
+          {/* Render edges with arrows */}
           {edges.map(edge => {
             const fromPos = getNodePosition(edge.from);
             const toPos = getNodePosition(edge.to);
+            const arrowData = calculateArrowPath(fromPos, toPos);
+            
+            if (!arrowData) return null;
+            
             return (
-              <line
+              <g 
                 key={edge.id}
-                x1={fromPos.x}
-                y1={fromPos.y}
-                x2={toPos.x}
-                y2={toPos.y}
-                className={getEdgeClasses(edge)}
-              />
+                className={mode === 'delete' ? "pointer-events-auto cursor-pointer" : ""}
+                onClick={() => mode === 'delete' && onEdgeClick(edge.id)}
+                onMouseEnter={() => onEdgeMouseEnter(edge.id)}
+                onMouseLeave={onEdgeMouseLeave}
+              >
+                {/* Main edge line */}
+                <path
+                  d={arrowData.linePath}
+                  className={`${getEdgeClasses(edge)}`}
+                  markerEnd="url(#arrowhead)"
+                />
+                {/* Arrow head */}
+                <path
+                  d={arrowData.arrowPath}
+                  className={`${getEdgeClasses(edge)}`}
+                />
+              </g>
             );
           })}
           
           {/* Preview edge */}
           {previewEdge && (
-            <line
-              x1={getNodePosition(previewEdge.from).x}
-              y1={getNodePosition(previewEdge.from).y}
-              x2={previewEdge.to.x}
-              y2={previewEdge.to.y}
-              className="stroke-purple-400 stroke-2 opacity-50"
-            />
+            <g>
+              <path
+                d={`M ${getNodePosition(previewEdge.from).x} ${getNodePosition(previewEdge.from).y} L ${previewEdge.to.x} ${previewEdge.to.y}`}
+                className="stroke-purple-400 stroke-2 opacity-50 fill-none"
+                markerEnd="url(#arrowhead)"
+              />
+            </g>
           )}
         </svg>
 
@@ -168,6 +272,8 @@ export function GraphCanvas({
                 e.stopPropagation();
                 onNodeClick(node.id);
               }}
+              onMouseEnter={() => onNodeMouseEnter(node.id)}
+              onMouseLeave={onNodeMouseLeave}
             >
               {node.label}
             </div>

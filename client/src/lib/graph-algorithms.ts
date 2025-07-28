@@ -8,10 +8,10 @@ export function buildAdjacencyList(nodes: GraphNode[], edges: GraphEdge[]): Map<
     adjacencyList.set(node.id, []);
   });
   
-  // Add edges
+  // Add edges (directed graph)
   edges.forEach(edge => {
     adjacencyList.get(edge.from)?.push(edge.to);
-    adjacencyList.get(edge.to)?.push(edge.from); // Undirected graph
+    // Remove the undirected edge addition for directed graph
   });
   
   return adjacencyList;

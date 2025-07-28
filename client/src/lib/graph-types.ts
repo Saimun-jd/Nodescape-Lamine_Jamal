@@ -17,7 +17,7 @@ export interface GraphState {
   nextNodeId: number;
 }
 
-export type AppMode = 'addNode' | 'addEdge' | 'algorithm';
+export type AppMode = 'addNode' | 'addEdge' | 'delete' | 'algorithm';
 export type AlgorithmType = 'bfs' | 'dfs';
 
 export interface AlgorithmStep {

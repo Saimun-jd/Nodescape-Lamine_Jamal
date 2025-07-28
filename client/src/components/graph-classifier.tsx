@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Brain, TreePine, Network, GitBranch, Loader2 } from "lucide-react";
+import { Brain, TreePine, Network, GitBranch, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface GraphData {
@@ -79,6 +79,7 @@ export function GraphClassifier({ graphData }: GraphClassifierProps) {
   const [result, setResult] = useState<ClassificationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const classifyGraph = async () => {
     if (graphData.nodes.length === 0) {
@@ -104,6 +105,7 @@ export function GraphClassifier({ graphData }: GraphClassifierProps) {
 
       const classification = await response.json();
       setResult(classification);
+      setIsExpanded(true); // Auto-expand when result is available
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Classification failed');
     } finally {
@@ -112,119 +114,134 @@ export function GraphClassifier({ graphData }: GraphClassifierProps) {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Brain className="h-5 w-5" />
-          ML Graph Classifier
+    <Card className="w-80 shadow-lg border-2">
+      <CardHeader className="pb-3 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+        <CardTitle className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            ML Classifier
+          </div>
+          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </CardTitle>
-        <CardDescription>
-          Classify your graph as Tree, Cyclic, or DAG using machine learning
-        </CardDescription>
+        {!isExpanded && result && (
+          <div className="flex items-center gap-2">
+            <Badge className={`${getTypeColor(result.type)} text-xs`}>
+              {getTypeIcon(result.type)}
+              <span className="ml-1">{result.type}</span>
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {(result.confidence * 100).toFixed(0)}% confidence
+            </span>
+          </div>
+        )}
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Button 
-          onClick={classifyGraph} 
-          disabled={isLoading || graphData.nodes.length === 0}
-          className="w-full"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <Brain className="mr-2 h-4 w-4" />
-              Classify Graph
-            </>
+      
+      {isExpanded && (
+        <CardContent className="space-y-4 pt-0">
+          <Button 
+            onClick={classifyGraph} 
+            disabled={isLoading || graphData.nodes.length === 0}
+            className="w-full"
+            size="sm"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Brain className="mr-2 h-4 w-4" />
+                Classify Graph
+              </>
+            )}
+          </Button>
+
+          {error && (
+            <div className="text-sm text-red-600 dark:text-red-400 p-2 bg-red-50 dark:bg-red-950 rounded">
+              {error}
+            </div>
           )}
-        </Button>
 
-        {error && (
-          <div className="text-sm text-red-600 dark:text-red-400 p-2 bg-red-50 dark:bg-red-950 rounded">
-            {error}
-          </div>
-        )}
-
-        {result && (
-          <div className="space-y-4">
-            <Separator />
-            
-            {/* Main Classification Result */}
-            <div className="text-center space-y-2">
-              <Badge className={`${getTypeColor(result.type)} text-sm px-3 py-1`}>
-                {getTypeIcon(result.type)}
-                <span className="ml-1">{result.type}</span>
-              </Badge>
-              <div className="text-sm text-muted-foreground">
-                {(result.confidence * 100).toFixed(1)}% confidence
+          {result && (
+            <div className="space-y-4">
+              <Separator />
+              
+              {/* Main Classification Result */}
+              <div className="text-center space-y-2">
+                <Badge className={`${getTypeColor(result.type)} text-sm px-3 py-1`}>
+                  {getTypeIcon(result.type)}
+                  <span className="ml-1">{result.type}</span>
+                </Badge>
+                <div className="text-sm text-muted-foreground">
+                  {(result.confidence * 100).toFixed(1)}% confidence
+                </div>
               </div>
-            </div>
 
-            {/* Type Description */}
-            <div className="text-xs text-muted-foreground text-center px-2">
-              {getTypeDescription(result.type)}
-            </div>
+              {/* Type Description */}
+              <div className="text-xs text-muted-foreground text-center px-2">
+                {getTypeDescription(result.type)}
+              </div>
 
-            {/* Probabilities */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Classification Probabilities</div>
-              {Object.entries(result.probabilities).map(([type, probability]) => (
-                <div key={type} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="flex items-center gap-1">
-                      {getTypeIcon(type)}
-                      {type}
-                    </span>
-                    <span>{(probability * 100).toFixed(1)}%</span>
+              {/* Probabilities */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Classification Probabilities</div>
+                {Object.entries(result.probabilities).map(([type, probability]) => (
+                  <div key={type} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="flex items-center gap-1">
+                        {getTypeIcon(type)}
+                        {type}
+                      </span>
+                      <span>{(probability * 100).toFixed(1)}%</span>
+                    </div>
+                    <Progress value={probability * 100} className="h-2" />
                   </div>
-                  <Progress value={probability * 100} className="h-2" />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Key Features */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Graph Features</div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between">
-                  <span>Nodes:</span>
-                  <span>{result.features.nodeCount}</span>
+              {/* Key Features */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Graph Features</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span>Nodes:</span>
+                    <span>{result.features.nodeCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Edges:</span>
+                    <span>{result.features.edgeCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Density:</span>
+                    <span>{result.features.density.toFixed(3)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cycles:</span>
+                    <span>{result.features.cycleCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Components:</span>
+                    <span>{result.features.components}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Edges:</span>
-                  <span>{result.features.edgeCount}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Density:</span>
-                  <span>{result.features.density.toFixed(3)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Cycles:</span>
-                  <span>{result.features.cycleCount}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Components:</span>
-                  <span>{result.features.components}</span>
+              </div>
+
+              {/* Reasoning */}
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Reasoning</div>
+                <div className="text-xs text-muted-foreground p-2 bg-gray-50 dark:bg-gray-900 rounded">
+                  {result.reasoning}
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Reasoning */}
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Reasoning</div>
-              <div className="text-xs text-muted-foreground p-2 bg-gray-50 dark:bg-gray-900 rounded">
-                {result.reasoning}
-              </div>
-            </div>
+          <div className="text-xs text-muted-foreground text-center">
+            Powered by Random Forest ML classifier
           </div>
-        )}
-
-        <div className="text-xs text-muted-foreground text-center">
-          Powered by Random Forest ML classifier
-        </div>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 }

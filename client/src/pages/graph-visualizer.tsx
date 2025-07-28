@@ -7,6 +7,7 @@ import { AlgorithmControls } from '@/components/algorithm-controls';
 import { HelpModal } from '@/components/help-modal';
 import { TraversalOrderDisplay } from '@/components/traversal-order-display';
 import { GraphClassifier } from '@/components/graph-classifier';
+import { StatusBar } from '@/components/status-bar';
 import { AlgorithmType } from '@/lib/graph-types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,11 +18,18 @@ export default function GraphVisualizer() {
     mode,
     selectedNode,
     previewEdge,
+    hoveredNode,
+    hoveredEdge,
     setMode,
     clearGraph,
     handleNodeClick,
+    handleEdgeClick,
     handleCanvasClick,
     handleMouseMove,
+    handleNodeMouseEnter,
+    handleNodeMouseLeave,
+    handleEdgeMouseEnter,
+    handleEdgeMouseLeave,
     cancelEdgeCreation,
   } = useGraph();
 
@@ -174,9 +182,16 @@ export default function GraphVisualizer() {
         edges={graphState.edges}
         onCanvasClick={handleCanvasClick}
         onNodeClick={handleNodeClick}
+        onEdgeClick={handleEdgeClick}
         onMouseMove={handleMouseMove}
+        onNodeMouseEnter={handleNodeMouseEnter}
+        onNodeMouseLeave={handleNodeMouseLeave}
+        onEdgeMouseEnter={handleEdgeMouseEnter}
+        onEdgeMouseLeave={handleEdgeMouseLeave}
         selectedNode={selectedNode}
         previewEdge={previewEdge}
+        hoveredNode={hoveredNode}
+        hoveredEdge={hoveredEdge}
         visitedNodes={algorithmState.visitedNodes}
         currentlyVisiting={algorithmState.currentlyVisiting}
         mode={mode}
@@ -195,8 +210,16 @@ export default function GraphVisualizer() {
         onDismiss={() => setShowTraversalOrder(false)}
       />
 
-      {/* ML Graph Classifier Panel */}
-      <div className="fixed bottom-4 right-4 z-50">
+      {/* Status Bar */}
+      <StatusBar
+        algorithmState={algorithmState}
+        nodeCount={graphState.nodes.length}
+        edgeCount={graphState.edges.length}
+        mode={mode}
+      />
+
+      {/* ML Graph Classifier Panel - Dynamic positioning */}
+      <div className="fixed top-4 right-4 z-50">
         <GraphClassifier graphData={graphState} />
       </div>
 

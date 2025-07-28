@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { serveStatic, log } from "./utils"; // Import from utils instead of vite
+import { serveStatic, log } from "./utils";
 
 const app = express();
 app.use(express.json());
@@ -43,18 +43,8 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  if (app.get("env") === "development") {
-    // Use dynamic import with a try-catch to avoid bundling issues
-    try {
-      const viteModule = await import("./vite.js");
-      await viteModule.setupVite(app, server);
-    } catch (error) {
-      console.warn("Vite development server not available:", error);
-      serveStatic(app);
-    }
-  } else {
-    serveStatic(app);
-  }
+  // Production mode - always serve static files
+  serveStatic(app);
 
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen(
@@ -65,4 +55,4 @@ app.use((req, res, next) => {
     },
     () => log(`serving on port ${port}`)
   );
-})();
+})(); 

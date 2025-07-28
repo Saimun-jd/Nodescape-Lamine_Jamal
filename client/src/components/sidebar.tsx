@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Link, Trash2, Play, Pause, StepForward, Square } from 'lucide-react';
+import { Plus, Link, Trash2, Play, Pause, StepForward, Square, X } from 'lucide-react';
 
 interface SidebarProps {
   mode: AppMode;
@@ -55,6 +55,7 @@ export function Sidebar({
     switch (mode) {
       case 'addNode': return 'Add Nodes Mode';
       case 'addEdge': return 'Connect Nodes Mode';
+      case 'delete': return 'Delete Mode';
       case 'algorithm': return 'Algorithm Mode';
       default: return 'Unknown Mode';
     }
@@ -64,6 +65,7 @@ export function Sidebar({
     switch (mode) {
       case 'addNode': return <Plus className="w-4 h-4" />;
       case 'addEdge': return <Link className="w-4 h-4" />;
+      case 'delete': return <X className="w-4 h-4" />;
       case 'algorithm': return <Play className="w-4 h-4" />;
       default: return <Plus className="w-4 h-4" />;
     }
@@ -110,6 +112,17 @@ export function Sidebar({
           >
             <Link className="w-4 h-4" />
             Connect Nodes
+          </Button>
+
+          {/* Delete Mode Button */}
+          <Button
+            className="w-full flex items-center gap-3"
+            variant={mode === 'delete' ? 'destructive' : 'outline'}
+            onClick={() => setMode('delete')}
+            disabled={algorithmState.isRunning}
+          >
+            <X className="w-4 h-4" />
+            Delete Mode
           </Button>
 
           {/* Clear Graph Button */}
@@ -202,56 +215,80 @@ export function Sidebar({
           </Button>
         </div>
 
-        {/* Visualization Controls */}
-        <div className={`space-y-3 ${!algorithmState.isRunning && algorithmState.totalSteps === 0 ? 'opacity-50' : ''}`}>
-          <h3 className="font-semibold text-slate-900">Playback Controls</h3>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onPauseVisualization}
-              disabled={!algorithmState.isRunning && algorithmState.totalSteps === 0}
-              className="flex-1"
-            >
-              {algorithmState.isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onStepForward}
-              disabled={algorithmState.isRunning && !algorithmState.isPaused}
-              className="flex-1"
-            >
-              <StepForward className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onResetVisualization}
-              disabled={algorithmState.totalSteps === 0}
-              className="flex-1"
-            >
-              <Square className="w-4 h-4" />
-            </Button>
-          </div>
-          
-          {/* Speed Control */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Animation Speed</label>
-            <Slider
-              value={[animationSpeed]}
-              onValueChange={([value]) => setAnimationSpeed(value)}
-              min={1}
-              max={10}
-              step={1}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-slate-500">
-              <span>Slow</span>
-              <span>Fast</span>
-            </div>
-          </div>
-        </div>
+        {/* Algorithm Controls */}
+        {(algorithmState.isRunning || algorithmState.totalSteps > 0) && (
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <h4 className="font-medium text-slate-900">Algorithm Controls</h4>
+              
+              {/* Control Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  size="sm"
+                  onClick={onPauseVisualization}
+                  disabled={!algorithmState.isRunning}
+                  variant="outline"
+                >
+                  {algorithmState.isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                  {algorithmState.isPaused ? 'Resume' : 'Pause'}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={onStepForward}
+                  disabled={algorithmState.isRunning}
+                  variant="outline"
+                >
+                  <StepForward className="w-4 h-4" />
+                  Step
+                </Button>
+              </div>
+
+              {/* Reset Button */}
+              <Button
+                size="sm"
+                onClick={onResetVisualization}
+                variant="outline"
+                className="w-full"
+              >
+                <Square className="w-4 h-4" />
+                Reset
+              </Button>
+
+              {/* Animation Speed */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Animation Speed</label>
+                <Slider
+                  value={[animationSpeed]}
+                  onValueChange={(value) => setAnimationSpeed(value[0])}
+                  max={10}
+                  min={1}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Slow</span>
+                  <span>Fast</span>
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Progress</span>
+                  <span>{algorithmState.currentStep + 1} / {algorithmState.totalSteps}</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${algorithmState.totalSteps > 0 ? ((algorithmState.currentStep + 1) / algorithmState.totalSteps) * 100 : 0}%`
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
